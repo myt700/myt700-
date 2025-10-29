@@ -1,0 +1,246 @@
+//这个题有点意思，研究了两个小时大概搞明白了
+链接：https://codeforces.com/contest/1905/problem/C
+题目是：
+C. 最大子序列  
+时间限制：每个测试 1 秒  
+内存限制：每个测试 256 MB  
+
+给定一个长度为 n 的字符串 s。在一次操作中，你可以选择字符串 s 的字典序最大的†子序列，并将其循环右移‡。
+
+你的任务是计算使 s 变为有序状态所需的最小操作次数，或者报告它永远无法达到有序状态。
+
+†字符串 a 的字典序小于字符串 b 当且仅当以下条件之一成立：  
+- a 是 b 的前缀，但 a≠b；  
+- 在 a 和 b 第一个不同的位置，a 中的字母在字母表中出现得比 b 中对应位置的字母更早。
+
+‡将字符串 t₁t₂…tₘ 循环右移后，我们得到字符串 tₘt₁…tₘ₋₁。
+
+输入  
+每个测试包含多个测试用例。第一行包含一个整数 t（1≤t≤10⁴）——测试用例的数量。接下来是测试用例的描述。
+
+每个测试用例的第一行包含一个整数 n（1≤n≤2×10⁵）——字符串 s 的长度。
+
+每个测试用例的第二行包含一个长度为 n 的字符串 s，由小写英文字母组成。
+
+保证所有测试用例的 n 之和不超过 2×10⁵。
+
+输出  
+对于每个测试用例，输出一个整数——使 s 有序所需的最小操作次数，如果不可能则输出 -1。
+
+示例  
+输入  
+6  
+5  
+aaabc  
+3  
+acb  
+3  
+bac  
+4  
+zbca  
+15  
+czddeneeeemigec  
+13  
+cdefmopqsvxzz  
+
+输出  
+0  
+1  
+-1  
+2  
+6  
+0  
+
+说明  
+在第一个测试用例中，字符串 s 已经是有序的，因此不需要操作。  
+在第二个测试用例中，进行一次操作，我们将选择 cb 并循环右移它。字符串 s 现在变为 abc，这是有序的。  
+在第三个测试用例中，s 无法变为有序。  
+在第四个测试用例中，我们将执行以下操作：  
+- 字典序最大的子序列是 zca。然后 s 变为 abzc。  
+- 字典序最大的子序列是 zc。然后 s 变为 abcz。字符串变为有序。  
+因此，我们需要 2 次操作。
+做法：//其实做法不难想到，但代码难写，我相信以后就不会觉得他难写了哈哈哈
+感谢qfl_zzz
+难以下手？那不妨先暴力模拟一下操作的过程。
+首先，对于第一次操作，我们肯定是需要先找到初始串的最大字典序子序列；
+怎么找？既然要求是最大字典序，那么显然最大的字母一定得全部先选上，然后再去选次大的字母；
+注意，假设我们选上的最后一个最大的字符的位置是 pre ，那么当我们再选上次大的字符时，假如 x 是它的位置，那么需要满足 x>pre ，因为如果任何一个最大的字符前面出现了一个次大的字符，那么字典序显然是会小于去掉这个次大的字符的；
+然后，我们假设选出来的字典序最大的子序列为 T ，设对 T 进行一次操作后形成的子序列为 T&#39; ，那么，我们下一次操作的字典序最大的子序列一定是 T&#39; 去掉第一个字符后形成的子序列，我们设为 S；
+如何理解？因为 T 是已知的字典序最大的子序列，那么 T 从末尾剔除一个元素后显然就成为了字典序次大的子序列，我们注意到题目给出的操作是对子序列进行循环右移，如此便形成了 T&#39; ，然后我们剔除掉 T&#39; 的第一个字符后形成了 S ，这就相当于是从 T 中剔除掉了最后一个元素；
+因此，每一次的操作对应的子序列一定是上一次操作的子序列剔除最后一个元素形成的，如此一来问题便可以轻易解决了。
+代码以及分析：
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+void solve() {
+    int n;
+    string s;
+    cin >> n >> s;
+    
+    // 为了处理方便，让字符串下标从1开始
+    s = " " + s;
+    
+    vector<int> indices;  // 存储最大子序列中所有字符的位置
+    vector<bool> visited(n + 1, false);  // 标记哪些位置属于最大子序列
+    int start = 1;  // 记录当前搜索的起始位置，保证相对顺序
+    bool first_group = true;  // 标记是否是第一组（最大的字母）
+    int operations = 0;  // 记录操作次数
+    
+    // 从z到a依次处理每个字母（从大到小）
+    for (char c = 'z'; c >= 'a'; c--) {
+        int count = 0;  // 记录当前字母在剩余部分出现的次数
+        
+        // 在当前字母c中，找到所有在start之后出现的位置
+        for (int i = start; i <= n; i++) {
+            if (s[i] == c) {
+                count++;
+                start = i;  // 更新起始位置，保证后面的字母在当前字母之后
+                indices.push_back(i);  // 记录位置
+                visited[i] = true;     // 标记该位置属于最大子序列
+            }
+        }
+        
+        // 如果找到了当前字母
+        if (count > 0) {
+            if (!first_group) {
+                // 如果不是第一组（不是最大的字母），需要记录操作次数
+                operations += count;
+            }
+            first_group = false;  // 处理过至少一组后，标记为false
+        }
+    }
+    
+    // 构建操作后的字符串：对最大子序列进行循环右移
+    string result = s;  // 复制原字符串
+    int idx = 0;  // 用于遍历indices数组
+    
+    // 循环右移操作：最大子序列的最后一个字符移到最前面
+    for (int i = n; i >= 1; i--) {
+        if (visited[i]) {
+            // 将最大子序列循环右移：最后一个字符变成第一个，依次前移
+            result[i] = s[indices[idx++]];
+        }
+    }
+    
+    // 检查最终字符串是否有序
+    if (!is_sorted(result.begin(), result.end())) {
+        cout << -1 << endl;  // 无法变成有序序列
+    } else {
+        cout << operations << endl;  // 输出最小操作次数
+    }
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    
+    int t;
+    cin >> t;
+    while (t--) {
+        solve();
+    }
+    
+    return 0;
+}
+分析：
+初始状态
+
+string s = " zbca";  // 下标从1开始：s[1]='z', s[2]='b', s[3]='c', s[4]='a'
+vector<int> indices;
+vector<bool> visited(5, false);
+int start = 1;
+bool first_group = true;
+int operations = 0;
+
+
+ 第1轮循环：c = 'z'
+
+for (int i = start; i <= 4; i++) {  // i=1,2,3,4
+    if (s[i] == 'z') {  // i=1时满足
+        count++;           // count=1
+        start = i;         // start=1 (更新为当前位置)
+        indices.push_back(i);  // indices = [1]
+        visited[i] = true;     // visited[1]=true
+    }
+}
+// 结果：找到1个'z'，记录位置1
+
+
+ 第2-24轮循环：c = 'y'到'd'
+
+// 这些字母在"zbca"中都不存在，全部跳过
+// start保持为1，indices保持[1]
+
+
+ 第25轮循环：c = 'c'
+
+for (int i = start; i <= 4; i++) {  // i=1,2,3,4, start=1
+    if (s[i] == 'c') {  // i=3时满足
+        count++;           // count=1  
+        start = i;         // start=3 (关键：更新到当前位置)
+        indices.push_back(i);  // indices = [1, 3]
+        visited[i] = true;     // visited[3]=true
+    }
+}
+// 结果：找到1个'c'，记录位置3
+
+
+ 第26轮循环：c = 'b'
+
+for (int i = start; i <= 4; i++) {  // i=3,4, start=3
+    if (s[i] == 'b') {  // 没有满足的(i=2的'b'在start=3之前，不会被选中)
+        // 不执行
+    }
+}
+// 结果：没有找到在位置3之后的'b'
+
+
+ 第27轮循环：c = 'a'
+
+for (int i = start; i <= 4; i++) {  // i=3,4, start=3
+    if (s[i] == 'a') {  // i=4时满足
+        count++;           // count=1
+        start = i;         // start=4
+        indices.push_back(i);  // indices = [1, 3, 4]
+        visited[i] = true;     // visited[4]=true
+    }
+}
+// 结果：找到1个'a'，记录位置4
+
+
+ 操作次数计算
+
+// 最终indices = [1, 3, 4]，对应字符"zca"
+
+// 第一组'z': first_group=true → operations不加
+// 第二组'c': first_group=false → operations += 1 → operations=1  
+// 第三组'a': first_group=false → operations += 1 → operations=2
+
+
+ 循环右移操作
+
+string result = " zbca";  // 复制原字符串
+int idx = 0;
+
+for (int i = 4; i >= 1; i--) {
+    if (visited[i]) {  // i=4,3,1时满足
+        result[i] = s[indices[idx++]];  
+        // i=4: result[4] = s[1]='z' → result=" zbcz"
+        // i=3: result[3] = s[3]='c' → result=" zbcz" 
+        // i=2: visited[2]=false → 不变 'b'
+        // i=1: result[1] = s[4]='a' → result="abzcz"
+    }
+}
+// 最终result="abzc"
+
+
+ 检查排序
+
+is_sorted(" abzc")  // 检查"abzc"是否有序 → 是
+cout << operations;  // 输出2
+
+
+最终结果：经过2次操作，`"zbca"` → `"abzc"` → `"abcz"`，操作次数为2。
