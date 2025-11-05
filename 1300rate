@@ -250,3 +250,6 @@ B题：https://codeforces.com/contest/2156/problem/B
 主要是它那个开特判就能过的时间复杂度我理解不了
 所以还是分块处理比较好理解
 C题：https://codeforces.com/contest/2156/problem/C
+这个题也很有意思，其实很多题都是gcd
+这个gcd就是，因为擦除次数是有限的所以，要想办法把能分的都分掉，那么对于整体的数据，有一点二分答案的意思
+然后我们发现
